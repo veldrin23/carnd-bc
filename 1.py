@@ -303,7 +303,7 @@ else:
     model.add(Dropout(0.5))
     model.add(Dense(100, activation='relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(1, activation='softmax'))
+    model.add(Dense(1, activation='softmax', name='output'))
 
 # model.summary()
 

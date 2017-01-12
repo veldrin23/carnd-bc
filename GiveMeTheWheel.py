@@ -5,12 +5,8 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2
 from keras.optimizers import Adam
 import math
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.image as pimg
 import numpy as np
 import cv2
-import threading
-from random import sample
 from random import shuffle
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
@@ -81,8 +77,7 @@ def read_and_process_img(file_name, normalize_img=normalize_images, grayscale_im
 
 # Generator function
 # Thanks to Paul Heraty for this
-def img_generator(images, angles2):
-
+def img_generator(images):
     ii = 0
     while 1:
         images_out = np.ndarray(shape=(batch_size, image_dimension_x, image_dimension_y, color_depth * image_depth),
@@ -96,15 +91,14 @@ def img_generator(images, angles2):
             file_name = images[ii][0]
 
             centre = read_and_process_img(file_name).reshape(image_dimension_x, image_dimension_y,  color_depth * image_depth)
-            angle = angles2[ii]
+            angle = images[ii][3]
 
             images_out[ii] = centre
             angles_out[ii] = angle
             angles_out = angles_out.reshape(batch_size, 1)
             ii += 1
 
-        yield ((images_out, angles_out))
-
+        yield ({'zeropadding2d_input_1': images_out}, {'output': angles_out})
 
 
 def calc_samples_per_epoch(array_size, batch_size):
@@ -117,24 +111,15 @@ def calc_samples_per_epoch(array_size, batch_size):
 
 with open('driving_log.csv') as f:
     logs = pd.read_csv(f, header=None)
-    nb_images = logs.shape[0]
-    images_links = np.ndarray(shape=(nb_images, 3), dtype=object)
-    angles = np.ndarray(shape=nb_images, dtype=float)
-    i = 0
-    for q in logs.iterrows():
-        images_links[i, 0] = q[1][0]
-        images_links[i, 1] = q[1][1]
-        images_links[i, 2] = q[1][2]
-        angles[i] = q[1][3]
-        i += 1
+    logs = logs.ix[:, [0, 1, 2, 3]]
 
 #############################
 # Data extract and handling #
 #############################
 
 # create (train, validation) and test data
-x_train, x_test, y_train, y_test = train_test_split(images_links, angles, test_size=.2, random_state=0)
-x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=.33, random_state=0)
+x_train, x_val = train_test_split(logs, test_size=.2, random_state=0)
+x_val, x_test = train_test_split(x_val, test_size=.33, random_state=0)
 
 
 ###############################################
@@ -179,28 +164,28 @@ model.add(Convolution2D(512, 3, 3, activation='relu'))
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(Flatten())
-model.add(Dense(4096, activation='relu'))
+model.add(Dense(16, activation='relu'))
 model.add(Dropout(0.5))
-model.add(Dense(4096, activation='relu'))
+model.add(Dense(16, activation='relu'))
 model.add(Dropout(0.5))
-model.add(Dense(1, activation='softmax'))
+model.add(Dense(1, activation='softmax', name='output'))
 
 
 # model.load_weights('vgg16_weights.h5')
 model.compile(loss='mean_squared_error',
               optimizer=Adam(lr=learning_rate)
               )
-# model.summary()
+model.summary()
 
 history = model.fit_generator(
-    img_generator(x_train, y_train),
+    img_generator(x_train),
     nb_epoch=nb_epoch,
     max_q_size=10,
     samples_per_epoch=calc_samples_per_epoch(len(x_train), batch_size),
-    validation_data=img_generator(x_val, y_val),
+    validation_data=img_generator(x_val),
     nb_val_samples=calc_samples_per_epoch(len(x_val), batch_size),
     verbose=1)
 
 score = model.evaluate_generator(
-    generator=img_generator(x_test, y_test),
+    generator=img_generator(x_test),
     val_samples=calc_samples_per_epoch(len(x_test), batch_size))

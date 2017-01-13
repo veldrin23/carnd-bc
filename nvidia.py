@@ -15,19 +15,26 @@ from keras.layers import Dense, Dropout, Flatten, Lambda, ELU, MaxPooling2D
 from keras.layers.convolutional import Convolution2D
 from keras.callbacks import ModelCheckpoint
 from os.path import basename
+from keras.models import model_from_json
 pd.options.mode.chained_assignment = None
 
 
+fine_tuning = False
 tf.python.control_flow_ops = tf
 
-nb_epoch = 10
+nb_epoch = 2
 number_of_rows = int(len([f for f in os.listdir('D:/IMG') if os.path.isfile(os.path.join('D:/IMG', f))])/3)
 print(number_of_rows)
 image_rows = 78
 image_columns = 208
 image_channels = 3
 batch_size = 150
-learning_rate = 0.0001
+
+
+if fine_tuning:
+    learning_rate = 0.0000005
+else:
+    learning_rate = 0.0000005
 
 
 # normalize image
@@ -45,7 +52,7 @@ def flip_image(img):
     return cv2.flip(img, flipCode=1)
 
 
-def read_and_process_img(file_name, normalize_img=False, grayscale_img=False, flip=False,
+def read_and_process_img(file_name, normalize_img=True, grayscale_img=False, flip=False,
                          remove_top_bottom=True, remove_amount=0.125, resize=True, resize_percentage=.65):
 
     img = mpimg.imread('D:/IMG/' + basename(file_name), 1)
@@ -59,6 +66,7 @@ def read_and_process_img(file_name, normalize_img=False, grayscale_img=False, fl
         img = flip_image(img)
     if resize:
         img = imresize(img, resize_percentage, interp='bilinear', mode=None)
+
     return img
 
 
@@ -66,9 +74,9 @@ with open('driving_log.csv') as f:
     logs = pd.read_csv(f, header=None)
 
 x_train = logs.ix[:, [0, 1, 2, 3]]
-x_train.loc[:, 4] = 0  # flip variable
+# x_train.loc[:, 4] = 0  # flip variable
 x_train_flip = x_train.loc[x_train.loc[:, 3] != 0, :]
-x_train_flip.loc[:, 4] = 1  # sets to 1, so that process_image flips this image
+x_train_flip.loc[:, 3] *= -1  # sets to 1, so that process_image flips this image
 x_train = x_train.append(x_train_flip)
 x_train = x_train.reset_index(drop=True)  # reset indexes
 
@@ -77,6 +85,31 @@ train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
 x_test = np.array(x_train.loc[(val_rows+1):, :])
 x_val = np.array(x_train.loc[(train_rows+1):val_rows, :])
 x_train = np.array(x_train.loc[1:train_rows, :])
+
+
+def remove_half_of_zeroes(df):
+    zeroes_array = np.where(df[:, 3] == 0)[0]
+    idx = sample(list(zeroes_array), int(len(zeroes_array)/2))
+    df = np.delete(df, idx,0)
+    return df
+
+
+def remove_close_to_zero(df, how_close=0.01):
+    df = df[~((abs(df[:, 3]) < how_close) & (df[:, 3] != 0))]
+    return df
+
+
+def reshape_data(x_train, half_zeroes=True, close_to_zero=True):
+    if half_zeroes:
+        x_train = remove_close_to_zero(x_train)
+    if close_to_zero:
+        x_train = remove_close_to_zero(x_train)
+    return x_train
+
+
+x_train = reshape_data(x_train)
+
+
 
 
 def get_image(images):
@@ -95,14 +128,15 @@ def get_image(images):
 
             file_name = images[j, random_side]
             angle = images[j, 3]
-
-            if images[j, 4] == 1:
-                angle *= -1
-                images_out[j] = read_and_process_img(file_name[0], flip=True)
-            else:
-                images_out[j] = read_and_process_img(file_name[0], flip=False)
+            #
+            # if images[j, 4] == 1:
+            #     angle *= 1
+            #     images_out[j] = read_and_process_img(file_name[0], flip=True)
+            # else:
+            images_out[j] = read_and_process_img(file_name[0], flip=False)
             angle_out[j] = angle
             ii += 1
+            # print(images_out.shape)
         yield images_out, angle_out
 
 
@@ -147,17 +181,27 @@ def get_model():
     model.add(ELU())
     model.add(Dense(1, name='output', init='he_normal'))
     # adam = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-    model.compile(optimizer=Adam(lr=learning_rate), loss='mse', )
+    model.compile(optimizer=Adam(lr=learning_rate), loss='mse')
     return model
 
 
-model = get_model()
-samples_per_epoch = calc_samples_per_epoch(len(x_train), batch_size)
+if fine_tuning:
+    print('back to work...')
 
+    with open('model.json', 'r') as mfile:
+        model = model_from_json(json.load(mfile))
+    model.load_weights('model.h5')
+    model.compile(optimizer=Adam(lr=learning_rate), loss='mse')
 
-max_q_size = 32
-checkpoint = ModelCheckpoint("model-{epoch:02d}.h5", monitor='loss', verbose=1, save_best_only=False, mode='max')
-callbacks_list = [checkpoint]
+else:
+    print("starting over again")
+    model = get_model()
+    samples_per_epoch = calc_samples_per_epoch(len(x_train), batch_size)
+
+    max_q_size = 32
+    checkpoint = ModelCheckpoint("model-{epoch:02d}.h5", monitor='loss', verbose=1, save_best_only=False, mode='max')
+    callbacks_list = [checkpoint]
+
 
 history = model.fit_generator(
     get_image(x_train),

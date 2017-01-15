@@ -5,7 +5,8 @@ from os.path import basename
 with open('driving_log.csv') as f:
     logs = pd.read_csv(f, header=None)
 import matplotlib.image as mpimg
-
+import matplotlib.pyplot as plt
+pd.options.mode.chained_assignment = None
 
 x_train = logs.ix[:, [0, 1, 2, 3]]
 x_train.loc[:, 4] = 0  # flip variable
@@ -20,15 +21,20 @@ x_test = np.array(x_train.loc[(val_rows+1):, :])
 x_val = np.array(x_train.loc[(train_rows+1):val_rows, :])
 x_train = np.array(x_train.loc[1:train_rows, :])
 
-#
-# for i in range(100):
-#     random_side = sample(range(3), 1)
-#     # print(basename(x_train[i, random_side][0]))
-#     img = mpimg.imread('C:\\New folder\\Img\\' + basename(x_train[i, random_side][0]), 1)
-#     print(img.shape)
 
 
-a = 'D:/IMG/' + basename(logs[1][1])
-print(a)
-b = mpimg.imread(a)
-print(b)
+def remove_zeroes_and_close_to_zero(df, really = True):
+    if really:
+        # df = df[~((abs(df[:, 3]) < 0.01) & (df[:, 3] != 0))]
+        idx = np.random.randint(sum(df[:, 3] == 0), size=int(sum(df[:, 3] == 0) / 2))
+        print(len(idx))
+        # df = df.delete(idx)
+        df = np.delete(df, idx, 0)
+        return df
+
+
+print(x_train.shape)
+print(remove_zeroes_and_close_to_zero(x_train).shape)
+
+plt.hist(remove_zeroes_and_close_to_zero(x_train)[:, 3])
+plt.show()

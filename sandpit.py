@@ -27,16 +27,48 @@ def reshape_data(x_train, half_zeroes=True, close_to_zero=True):
         x_train = remove_close_to_zero(x_train)
     return x_train
 
-with open('driving_log_step.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=0)
 
-x_train = logs.ix[:, [0, 1, 2, 3]]
+def import_shape_data(logs):
+    data_in = logs.ix[:, [0, 1, 2, 3]]
+    data_in.loc[:, 4] = 0
+    _flip = data_in.loc[data_in.loc[:, 3] != 0, :]
+    _flip.loc[:, 3] *= -1
+    _flip.loc[:, 4] = 1
+    data_in = data_in.append(_flip)
+    data_in.loc[:, 5] = 0
+    data_in.loc[data_in.loc[:, 3] < -0.15, 5] = -1
+    data_in.loc[data_in.loc[:, 3] > 0.15, 5] = 1
+    zeroes_to_keep = int(sum(abs(data_in.loc[:, 5]))*.5)
+    data_in = data_in.loc[data_in.loc[:, 5] == 0, ].sample(zeroes_to_keep).\
+        append(data_in.loc[data_in.loc[:, 5] < -.01, ]).\
+        append(data_in.loc[data_in.loc[:, 5] > .01, ])
+    data_in = shuffle(data_in)
+    data_in = data_in.reset_index(drop=True)
+    data_in.columns = ['centre_image', 'left_image', 'right_image', 'steering_angle', 'flip', 'sharp_turn']
+    return data_in
 
-x_train.loc[:, 4] = 0
-x_train_flip = x_train.loc[x_train.loc[:, 3] != 0, :]
-x_train_flip.loc[:, 3] *= -1
-x_train_flip.loc[:, 4] = 1
-x_train = x_train.append(x_train_flip)
-x_train.loc[:, 5] = 0
-x_train.loc[x_train.loc[:, 3] < -0.1, 5] = -1
-x_train.loc[x_train.loc[:, 3] > 0.1, 5] = 1
+with open('driving_log_all.csv') as f:
+    logs = pd.read_csv(f, header=None, skiprows=1)
+    full_track = import_shape_data(logs)
+
+with open('driving_log_turn.csv') as f:
+    logs = pd.read_csv(f, header=None, skiprows=1)
+    turns = import_shape_data(logs)
+
+with open('driving_log_recover.csv') as f:
+    logs = pd.read_csv(f, header=None, skiprows=1)
+    recover = import_shape_data(logs)
+
+
+
+
+x_train = full_track.append(turns).append(recover)
+x_train = x_train.reset_index(drop=True)
+
+train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
+x_test_images, x_test_angles = np.array(x_train.loc[(val_rows+1):,
+                                        ['centre_image', 'left_image', 'right_image', 'flip', 'sharp_turn']]), \
+                               np.array(x_train.loc[(val_rows+1):,  'steering_angle']).astype(float)
+
+print(x_test_images[...,3][10])
+

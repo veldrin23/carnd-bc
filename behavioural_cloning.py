@@ -20,8 +20,8 @@ tf.python.control_flow_ops = tf
 # VARIABLES #
 #############
 nb_epoch = 7
-image_rows = 78
-image_columns = 208
+image_rows = (160 - 50) * .65
+image_columns = (320 * .65)
 batch_size = 350
 
 ############
@@ -66,12 +66,11 @@ def flip_image(img):
 
 # read and process image
 def read_and_process_img(file_name, flip,  normalize_img=True, grayscale_img=grayscale_img,
-                         remove_top_bottom=True, remove_amount=0.125, resize=True, resize_percentage=.65,
-                         brightness=True):
+                         remove_top_bottom=True, resize=True, resize_percentage=.65):
     img = mpimg.imread('F:/IMG_own/' + basename(file_name), 1)
 
     if remove_top_bottom:
-        img = img[int(img.shape[0]*remove_amount): int(img.shape[0]*(1-remove_amount)), :, :]
+        img = img[50:, :, :]
 
     if normalize_img:
         img = normalize(img)
@@ -182,7 +181,6 @@ def get_image(images, angles):
 
 def calc_samples_per_epoch(array_size, batch_size):
     num_batches = array_size / batch_size
-    # return value must be a number than can be divided by batch_size
     samples_per_epoch = math.ceil((num_batches / batch_size) * batch_size)
     samples_per_epoch = samples_per_epoch * batch_size
     return samples_per_epoch

@@ -19,9 +19,9 @@ tf.python.control_flow_ops = tf
 #############
 # VARIABLES #
 #############
-nb_epoch = 7
-image_rows = (160 - 50) * .65
-image_columns = (320 * .65)
+nb_epoch = 15
+image_rows = int((160 - 50) * .65)
+image_columns = int((320 * .65))
 batch_size = 350
 
 ############
@@ -42,8 +42,7 @@ else:
 if fine_tuning:
     learning_rate = 0.0000001
 else:
-    learning_rate = 0.00001
-
+    learning_rate = 0.0002
 
 #############
 # FUNCTIONS #
@@ -115,17 +114,18 @@ with open('driving_log_all.csv') as f:
     logs = pd.read_csv(f, header=None, skiprows=1)
     full_track = import_shape_data(logs)
 
-# a sample of sharp turns
-with open('driving_log_turn.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    turns = import_shape_data(logs)
-
 # recovery samples 
 with open('driving_log_recover.csv') as f:
     logs = pd.read_csv(f, header=None, skiprows=1)
     recover = import_shape_data(logs)
 
-x_train = full_track.append(recover).append(turns)
+# spoonfeeding the bits where the car struggles
+with open('driving_log_spoonfeed.csv') as f:
+    logs = pd.read_csv(f, header=None, skiprows=1)
+    spoon = import_shape_data(logs)
+
+
+x_train = full_track.append(recover).append(spoon)
 x_train = x_train.reset_index(drop=True)
 
 train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)

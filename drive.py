@@ -51,8 +51,10 @@ def process_img(img, flip = False,  normalize_img=True, grayscale_img=True,
                          brightness=True):
     # img = mpimg.imread('F:/CarNDstep/IMG/' + basename(file_name), 1)
 
+
     if remove_top_bottom:
-        img = img[int(img.shape[0]*remove_amount): int(img.shape[0]*(1-remove_amount)), :, :]
+        img = img[50:, :, :]
+
 
     if normalize_img:
         img = normalize(img)

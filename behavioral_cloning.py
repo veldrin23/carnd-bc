@@ -46,7 +46,7 @@ else:
 if fine_tuning:
     learning_rate = 0.0000001
 else:
-    learning_rate = 0.002
+    learning_rate = 0.0001
 
 # image dictionary, so I can save my results in different folders
 all_images = glob.glob('F:/images/**/*.jpg',  recursive=True)
@@ -65,13 +65,15 @@ def flip_image(img):
 # read and process image
 def read_and_process_img(file_name, flip, remove_top_bottom=True):
 
-    img = mpimg.imread(all_images[image_basenames == basename(file_name)])
-
+    # img = mpimg.imread(all_images[image_basenames == basename(file_name)]) # well THAT didn't work
+    img = mpimg.imread('F:/images/IMG_udacity/' + basename(file_name))
+    # print(basename(file_name))
     if flip == 1:
         img = flip_image(img)
 
     img = cv2.resize(img, (image_columns, image_rows))
     img = img[np.newaxis, ...]
+
     return img
 
 
@@ -144,6 +146,7 @@ x_val = np.array(x_train[(train_rows+1):val_rows])
 x_train = np.array(x_train[1:train_rows])
 
 
+# image generator
 def get_image(image_list):
     ii = 0
     while True:
@@ -155,11 +158,12 @@ def get_image(image_list):
                 shuffle(image_list)
                 ii = 0
 
-            angle_out[j] = image_list[ii, 1]
-            images_out[j] = read_and_process_img(image_list[ii, 0], flip=image_list[ii, 2])
+            angle_out[j] = image_list[ii][1]
+            images_out[j] = read_and_process_img(image_list[ii][0], flip=image_list[ii][2])
 
             ii += 1
         yield images_out, angle_out
+
 
 
 def calc_samples_per_epoch(array_size, batch_size):

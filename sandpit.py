@@ -31,14 +31,16 @@ def grayscale(img):
 def flip_image(img):
     return cv2.flip(img, flipCode=1)
 
-all_images = glob.glob('F:/images/**/*.jpg',  recursive=True)
-image_basenames = [basename(x) for x in all_images]
+
 
 
 # read and process image
 def read_and_process_img(file_name, flip,  normalize_img=True, grayscale_img=False,
                          remove_top_bottom=True):
-    img = mpimg.imread(all_images[image_basenames == basename(file_name)])
+
+    img = mpimg.imread('F:/images/IMG_udacity/' + basename(file_name))
+    plt.imshow(img)
+    plt.show()
     if flip == 1:
         img = flip_image(img)
     return img
@@ -92,5 +94,5 @@ with open('F:/driving_log_udacity.csv') as f:
     _udacity = pd.read_csv(f, header=None, skiprows=1)
     _udacity = import_shape_data(_udacity, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
-
-x_train = _udacity
+for x in _udacity['image_name']:
+    read_and_process_img(x, 1)

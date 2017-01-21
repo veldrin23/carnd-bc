@@ -126,9 +126,14 @@ with open('F:/driving_log_udacity.csv') as f:
     _udacity = pd.read_csv(f, header=None, skiprows=1)
     _udacity = import_shape_data(_udacity, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
+# read in the recovery data
+with open('F:/driving_log_recover2.csv') as f:
+    _recovery = pd.read_csv(f, header=None, skiprows=1)
+    _recovery = import_shape_data(_recovery, down_sample_zeroes=True, add_mirror=True, use_sides=True)
+
 
 # incase I want to append more datasets
-x_train = _udacity
+x_train = _udacity.append(_recovery)
 x_train = x_train.reset_index(drop=True)
 
 

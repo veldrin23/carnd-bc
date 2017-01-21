@@ -46,8 +46,8 @@ def change_brightness(img):
     return img_bright
 
 
-def process_img(img, flip = False,  normalize_img=True, grayscale_img=True,
-                         remove_top_bottom=True, remove_amount=0.125, resize=True, resize_percentage=.65,
+def process_img(img, flip = False,  normalize_img=True, grayscale_img=False,
+                         remove_top_bottom=True, remove_amount=0.125, resize=True, resize_percentage=.85,
                          brightness=True):
     # img = mpimg.imread('F:/CarNDstep/IMG/' + basename(file_name), 1)
 
@@ -62,8 +62,8 @@ def process_img(img, flip = False,  normalize_img=True, grayscale_img=True,
     if flip:
         img = flip_image(img)
 
-    if resize:
-        img = imresize(img, resize_percentage, interp='bilinear', mode=None)
+    # if resize:
+    #     img = imresize(img, resize_percentage, interp='bilinear', mode=None)
 
     if brightness:
         img = change_brightness(img)
@@ -71,6 +71,7 @@ def process_img(img, flip = False,  normalize_img=True, grayscale_img=True,
     if grayscale_img:
         img = grayscale(img)
         img = img[..., np.newaxis]
+    img = cv2.resize(img, (200, 66))
 
     return img
 

@@ -10,8 +10,10 @@ pd.options.mode.chained_assignment = None
 def nvidia(image_rows, image_columns, image_channels, learning_rate):
     input_shape = (image_rows, image_columns, image_channels)
     model = Sequential()
-    model.add(Convolution2D(24,5,5, input_shape=input_shape, subsample = (2,2),
+    model.add(Lambda(lambda x: x / 255 - .5, input_shape=input_shape, output_shape=input_shape))
+    model.add(Convolution2D(24,5,5, subsample = (2,2),
                         border_mode='same',
+                        input_shape=input_shape,
                         name='conv1', init='he_normal'))
     model.add(ELU())
 

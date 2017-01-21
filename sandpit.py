@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
 from random import sample
-pd.options.mode.chained_assignment = None
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from sklearn.utils import shuffle
 import random
 from sklearn.model_selection import train_test_split
+import glob
+from os.path import basename
+
+pd.options.mode.chained_assignment = None
 
 def remove_zeroes(df, how_much = 1):
     zeroes_array = np.where(df.loc[:, 3] == 0)[0]
@@ -39,36 +42,27 @@ def import_shape_data(logs):
     data_in.loc[data_in.loc[:, 3] < -0.15, 5] = -1
     data_in.loc[data_in.loc[:, 3] > 0.15, 5] = 1
     zeroes_to_keep = int(sum(abs(data_in.loc[:, 5]))*.5)
-    data_in = data_in.loc[data_in.loc[:, 5] == 0, ].sample(zeroes_to_keep).\
-        append(data_in.loc[data_in.loc[:, 5] < -.01, ]).\
-        append(data_in.loc[data_in.loc[:, 5] > .01, ])
+    if sum(data_in.loc[:, 5] == 0) > zeroes_to_keep:
+        data_in = data_in.loc[data_in.loc[:, 5] == 0, ].sample(zeroes_to_keep).\
+            append(data_in.loc[data_in.loc[:, 5] < -.01, ]).\
+            append(data_in.loc[data_in.loc[:, 5] > .01, ])
     data_in = shuffle(data_in)
     data_in = data_in.reset_index(drop=True)
     data_in.columns = ['centre_image', 'left_image', 'right_image', 'steering_angle', 'flip', 'sharp_turn']
     return data_in
 
-with open('driving_log_all.csv') as f:
+
+all_images = glob.glob('F:/images/**/*.jpg',  recursive=True)
+image_basenames = [basename(x) for x in all_images]
+log = 'driving_log_start.csv'
+
+with open('F:/driving_log_start.csv') as f:
     logs = pd.read_csv(f, header=None, skiprows=1)
-    full_track = import_shape_data(logs)
+    _start = import_shape_data(logs)
 
-with open('driving_log_turn.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    turns = import_shape_data(logs)
+print(basename(_start['centre_image'][0]))
 
-with open('driving_log_recover.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    recover = import_shape_data(logs)
-
-
-
-
-x_train = full_track.append(turns).append(recover)
-x_train = x_train.reset_index(drop=True)
-
-train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
-x_test_images, x_test_angles = np.array(x_train.loc[(val_rows+1):,
-                                        ['centre_image', 'left_image', 'right_image', 'flip', 'sharp_turn']]), \
-                               np.array(x_train.loc[(val_rows+1):,  'steering_angle']).astype(float)
-
-print(x_test_images[...,3][10])
+img = mpimg.imread(all_images[image_basenames == basename(_start['centre_image'][0])])
+plt.imshow(img)
+plt.show()
 

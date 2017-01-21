@@ -2,24 +2,27 @@ import pandas as pd
 import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-import numpy as np
-from random import sample, uniform
+import glob
 import math
+import numpy as np
+import json
+import tensorflow as tf
+from models import *
+from random import sample
 from sklearn.utils import shuffle
 from scipy.misc.pilutil import imresize
-import tensorflow as tf
-import json
 from keras.callbacks import ModelCheckpoint
 from os.path import basename
 from keras.models import model_from_json
+
+
 pd.options.mode.chained_assignment = None
-from models import *
 tf.python.control_flow_ops = tf
 
 #############
 # VARIABLES #
 #############
-nb_epoch = 15
+nb_epoch = 5
 image_rows = int((160 - 50) * .65)
 image_columns = int((320 * .65))
 batch_size = 350
@@ -42,7 +45,7 @@ else:
 if fine_tuning:
     learning_rate = 0.0000001
 else:
-    learning_rate = 0.0002
+    learning_rate = 0.0001
 
 #############
 # FUNCTIONS #
@@ -62,11 +65,16 @@ def grayscale(img):
 def flip_image(img):
     return cv2.flip(img, flipCode=1)
 
+all_images = glob.glob('F:/images/**/*.jpg',  recursive=True)
+image_basenames = [basename(x) for x in all_images]
+
 
 # read and process image
 def read_and_process_img(file_name, flip,  normalize_img=True, grayscale_img=grayscale_img,
                          remove_top_bottom=True, resize=True, resize_percentage=.65):
-    img = mpimg.imread('F:/IMG_own/' + basename(file_name), 1)
+
+    # img = cv2.imread('F:/IMG/' + basename(file_name), 1)
+    img = mpimg.imread(all_images[image_basenames == basename(file_name)])
 
     if remove_top_bottom:
         img = img[50:, :, :]
@@ -88,63 +96,62 @@ def read_and_process_img(file_name, flip,  normalize_img=True, grayscale_img=gra
 
 
 # import and shape data from log file
-def import_shape_data(logs):
+def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True):
     data_in = logs.ix[:, [0, 1, 2, 3]]
     data_in.loc[:, 4] = 0
-    _flip = data_in.loc[data_in.loc[:, 3] != 0, :]
-    _flip.loc[:, 3] *= -1
-    _flip.loc[:, 4] = 1
-    data_in = data_in.append(_flip)
+
+    # adds extra images with the negative of the driving angle and an indicator to flip the image
+    if add_mirror:
+        _flip = data_in.loc[data_in.loc[:, 3] != 0, :]
+        _flip.loc[:, 3] *= -1
+        _flip.loc[:, 4] = 1
+        data_in = data_in.append(_flip)
+
+    # downsampe zero driving angles
     data_in.loc[:, 5] = 0
-    ### the next part is to over-sample sharp turning angles and under-sample 0 steering angles
-    data_in.loc[data_in.loc[:, 3] < -0.15, 5] = -1
-    data_in.loc[data_in.loc[:, 3] > 0.15, 5] = 1
-    zeroes_to_keep = int(sum(abs(data_in.loc[:, 5]))*.5) # clumsy, but i think it's kinda cute :)
-    data_in = data_in.loc[data_in.loc[:, 5] == 0, ].sample(zeroes_to_keep).\
-        append(data_in.loc[data_in.loc[:, 5] < -.01, ]).\
-        append(data_in.loc[data_in.loc[:, 5] > .01, ])
+    if down_sample_zeroes:
+        ### the next part is to over-sample sharp turning angles and under-sample 0 steering angles
+        data_in.loc[data_in.loc[:, 3] < -0.15, 5] = -1
+        data_in.loc[data_in.loc[:, 3] > 0.15, 5] = 1
+        zeroes_to_keep = int(sum(abs(data_in.loc[:, 5])) * .5)  # clumsy, but i think it's kinda cute
+        if sum(data_in.loc[:, 5] == 0) > zeroes_to_keep:
+            data_in = data_in.loc[data_in.loc[:, 5] == 0, ].sample(zeroes_to_keep).\
+                append(data_in.loc[data_in.loc[:, 5] < -.001, ]).\
+                append(data_in.loc[data_in.loc[:, 5] > .001, ])
     ###
     data_in = shuffle(data_in)
     data_in = data_in.reset_index(drop=True)
     data_in.columns = ['centre_image', 'left_image', 'right_image', 'steering_angle', 'flip', 'sharp_turn']
     return data_in
 
-# normal drive around the track 2/3 times
-with open('driving_log_all.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    full_track = import_shape_data(logs)
 
-# recovery samples 
-with open('driving_log_recover.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    recover = import_shape_data(logs)
-
-# spoonfeeding the bits where the car struggles
-with open('driving_log_spoonfeed.csv') as f:
-    logs = pd.read_csv(f, header=None, skiprows=1)
-    spoon = import_shape_data(logs)
+with open('F:/driving_log_udacity.csv') as f:
+    _udacity = pd.read_csv(f, header=None, skiprows=1)
+    _udacity = import_shape_data(_udacity, down_sample_zeroes=True)
 
 
-x_train = full_track.append(recover).append(spoon)
+with open('F:/driving_log_spoon1.csv') as f:
+    _start = pd.read_csv(f, header=None, skiprows=1)
+    _start = import_shape_data(_start, down_sample_zeroes=False, add_mirror=False)
+
+
+x_train = _udacity.append(_start)
+
+print(x_train.shape)
 x_train = x_train.reset_index(drop=True)
-
 train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
 
 x_test_images, x_test_angles = np.array(x_train.loc[(val_rows+1):,
-                                        ['centre_image', 'left_image', 'right_image', 'flip', 'sharp_turn']]), \
+                                        ['centre_image', 'left_image', 'right_image', 'flip']]), \
                                np.array(x_train.loc[(val_rows+1):,  'steering_angle']).astype(float)
 
 x_val_images, x_val_angles = np.array(x_train.loc[(train_rows+1):val_rows,
-                                      ['centre_image', 'left_image', 'right_image', 'flip', 'sharp_turn']]),\
+                                      ['centre_image', 'left_image', 'right_image', 'flip']]),\
                              np.array(x_train.loc[(train_rows+1):val_rows, 'steering_angle']).astype(float)
 
 x_train_images, x_train_angles = np.array(x_train.loc[1:train_rows,
-                                          ['centre_image', 'left_image', 'right_image', 'flip', 'sharp_turn']]), \
+                                          ['centre_image', 'left_image', 'right_image', 'flip']]), \
                                  np.array(x_train.loc[1:train_rows, 'steering_angle']).astype(float)
-
-
-angle_array = []
-
 
 
 def get_image(images, angles):
@@ -161,21 +168,24 @@ def get_image(images, angles):
             if use_random_side:
                 random_side = sample(range(3), 1)
                 file_name = images[ii, random_side[0]]
+                angle_out[j] = angles[ii]
+                a = angles[ii]
                 if random_side[0] == 1:
-                    angle_out[j] = angles[ii] + .08
+                    a += .08
                 if random_side[0] == 2:
-                    angle_out[j] = angles[ii] - .08
+                    a -= .08
+                angle_out[j] = a
+
             else:
                 file_name = images[ii, 0]
                 angle_out[j] = angles[ii]
+
             if images[..., 3][ii] == 1:
                 images_out[j] = read_and_process_img(file_name, flip=True)
             else:
                 images_out[j] = read_and_process_img(file_name, flip=False)
 
             ii += 1
-            angle_array.append(angles[ii])
-
         yield images_out, angle_out
 
 

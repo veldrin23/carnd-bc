@@ -8,7 +8,7 @@ import numpy as np
 import json
 import tensorflow as tf
 from models import *
-from random import sample, shuffle
+from random import uniform, shuffle
 from sklearn.utils import shuffle as shuffledf
 from scipy.misc.pilutil import imresize
 from keras.callbacks import ModelCheckpoint
@@ -22,10 +22,12 @@ tf.python.control_flow_ops = tf
 #############
 # VARIABLES #
 #############
-nb_epoch = 5
-image_rows = 66
-image_columns = 200
-batch_size = 128
+nb_epoch = 3
+# image_rows = 66
+# image_columns = 200
+image_rows = int(110*.85)
+image_columns = int(320*.85)
+batch_size = 250
 
 ############
 # SETTINGS #
@@ -65,8 +67,9 @@ def flip_image(img):
 # read and process image
 def read_and_process_img(file_name, flip, remove_top_bottom=True):
 
-    # img = mpimg.imread(all_images[image_basenames == basename(file_name)]) # well THAT didn't work
     img = mpimg.imread('F:/images/IMG_udacity/' + basename(file_name))
+
+    img = img[50:, :, :]
     # print(basename(file_name))
     if flip == 1:
         img = flip_image(img)
@@ -79,7 +82,7 @@ def read_and_process_img(file_name, flip, remove_top_bottom=True):
 
 # function to shape the data from the log files.
 # allows for mirroring, down sampling and to choose to use the left and right sides
-def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.25):
+def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.25, over_sample_turns=True):
     data_in = logs.ix[:, [0, 1, 2, 3]]
     data_in.loc[:, 4] = 0
 
@@ -92,9 +95,17 @@ def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=
 
     # down sample zero driving angles
     if down_sample_zeroes:
-        zeroes_to_keep = int(sum(data_in.loc[:, 3] == 0) * .5)
-        data_in = data_in.loc[data_in.loc[:, 3] == 0, :].sample(zeroes_to_keep).\
-            append(data_in.loc[data_in.loc[:, 3] != 0, :])
+        # zeroes_to_keep = int(sum(data_in.loc[:, 3] == 0) * .5)
+        # data_in = data_in.loc[data_in.loc[:, 3] == 0, :].sample(zeroes_to_keep).\
+        #     append(data_in.loc[data_in.loc[:, 3] != 0, :])
+
+        data_in = data_in.loc[data_in.loc[:, 3] != 0, :]
+
+    # over sample sharp turns
+    if over_sample_turns:
+        turns = data_in.loc[abs(data_in.loc[:, 3]) > .15, :]
+        turns.loc[:, 3] += uniform(0, 1)/100
+        data_in = data_in.append(turns)
 
     # if using all sides
     if use_sides:
@@ -129,16 +140,24 @@ with open('F:/driving_log_udacity.csv') as f:
     _udacity = import_shape_data(_udacity, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
 # read in the recovery data
-with open('F:/driving_log_recover2.csv') as f:
+with open('F:/driving_log_recover.csv') as f:
     _recovery = pd.read_csv(f, header=None, skiprows=1)
     _recovery = import_shape_data(_recovery, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
+with open('F:/driving_log_recover2.csv') as f:
+    _recovery2 = pd.read_csv(f, header=None, skiprows=1)
+    _recovery2 = import_shape_data(_recovery2, down_sample_zeroes=True, add_mirror=True, use_sides=True)
+
+with open('F:/driving_log_recover3.csv') as f:
+    _recovery3 = pd.read_csv(f, header=None, skiprows=1)
+    _recovery3 = import_shape_data(_recovery3, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
 # incase I want to append more datasets
-x_train = _udacity.append(_recovery)
-x_train = x_train.reset_index(drop=True)
+x_train = _udacity.append(_recovery3)
 
 
+plt.hist(x_train['steering_angle'], 100)
+plt.show()
 # test, train and validatin sets
 train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
 x_test = np.array(x_train[(val_rows+1):])

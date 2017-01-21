@@ -21,11 +21,13 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 import tensorflow as tf
 tf.python.control_flow_ops = tf
 
-image_rows = 66
-image_columns = 200
+image_rows = int(110*.85)
+image_columns = int(320*.85)
 
 
 def read_and_process_img(img):
+    # img = cv2.resize(img, (image_columns, image_rows))
+    img = img[50:, :, :]
     img = cv2.resize(img, (image_columns, image_rows))
     return img
 

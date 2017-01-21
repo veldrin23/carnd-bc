@@ -51,22 +51,10 @@ def process_img(img, flip = False,  normalize_img=True, grayscale_img=False,
                          brightness=True):
     # img = mpimg.imread('F:/CarNDstep/IMG/' + basename(file_name), 1)
 
+    #
+    # if remove_top_bottom:
+    #     img = img[50:, :, :]
 
-    if remove_top_bottom:
-        img = img[50:, :, :]
-
-
-    if normalize_img:
-        img = normalize(img)
-
-    if flip:
-        img = flip_image(img)
-
-    # if resize:
-    #     img = imresize(img, resize_percentage, interp='bilinear', mode=None)
-
-    if brightness:
-        img = change_brightness(img)
 
     if grayscale_img:
         img = grayscale(img)

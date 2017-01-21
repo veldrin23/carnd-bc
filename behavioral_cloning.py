@@ -75,8 +75,8 @@ def read_and_process_img(file_name, flip, remove_top_bottom=True):
 
     img = mpimg.imread(all_images[image_basenames == basename(file_name)])
 
-    if remove_top_bottom:
-        img = img[50:, :, :]
+    # if remove_top_bottom:
+    #     img = img[50:, :, :]
 
     # if normalize_img:
     #     img = normalize(img)
@@ -91,7 +91,7 @@ def read_and_process_img(file_name, flip, remove_top_bottom=True):
 
 # import and shape data from log file
 
-def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.25):
+def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.018):
     data_in = logs.ix[:, [0, 1, 2, 3]]
     data_in.loc[:, 4] = 0
 
@@ -138,7 +138,7 @@ def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=
 
 with open('F:/driving_log_udacity.csv') as f:
     _udacity = pd.read_csv(f, header=None, skiprows=1)
-    _udacity = import_shape_data(_udacity, down_sample_zeroes=False, add_mirror=True, use_sides=True)
+    _udacity = import_shape_data(_udacity, down_sample_zeroes=False, add_mirror=False, use_sides=False)
 
 angle_array = []
 

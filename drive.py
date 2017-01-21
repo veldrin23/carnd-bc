@@ -46,21 +46,10 @@ def change_brightness(img):
     return img_bright
 
 
-def process_img(img, flip = False,  normalize_img=True, grayscale_img=False,
-                         remove_top_bottom=True, remove_amount=0.125, resize=True, resize_percentage=.85,
-                         brightness=True):
-    # img = mpimg.imread('F:/CarNDstep/IMG/' + basename(file_name), 1)
+def process_img(img, remove_top_bottom=True):
 
-    #
-    # if remove_top_bottom:
-    #     img = img[50:, :, :]
-
-
-    if grayscale_img:
-        img = grayscale(img)
-        img = img[..., np.newaxis]
-    img = cv2.resize(img, (200, 66))
-
+    if remove_top_bottom:
+        img = img[50:, :, :]
     return img
 
 

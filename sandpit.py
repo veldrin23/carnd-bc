@@ -115,13 +115,32 @@ x_train_images, x_train_angles = np.array(x_train.loc[1:train_rows,
                                           ['image_name', 'flip']]), \
                                  np.array(x_train.loc[1:train_rows, 'steering_angle']).astype(float)
 
-# print(x_train['image_name'][:10])
-# print(x_train_images[50:150])
 
-# print(x_train.sample(1))
-a = x_train['image_name'][100]
+batch_size = 128
+
+def get_image(images, angles):
+    ii = 0
+    while True:
+
+        # images_out = np.ndarray(shape=(batch_size, image_rows, image_columns, image_channels), dtype=float)
+        images_out = np.ndarray(shape=(128, 66, 200, 3), dtype=float)
+        angle_out = np.ndarray(shape=batch_size, dtype=float)
+        for j in range(batch_size):
+            if ii > batch_size:
+                images, angles = shuffle(images, angles, random_state=0)
+                ii = 0
+
+            file_name = images[ii, 0]
+            print(file_name)
+            angle_out[j] = angles[ii]
+
+            images_out[j] = read_and_process_img(file_name, flip=images[ii, 1])
+
+            ii += 1
+            angle_array.append(angles[ii])
+        return images_out, angle_out
+
+a, b = get_image(x_test_images, x_test_angles)
 
 
-img = read_and_process_img(a, flip=True)
-plt.imshow(img)
-plt.show()
+print(a)

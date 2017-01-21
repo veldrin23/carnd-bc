@@ -26,7 +26,6 @@ image_columns = int(320*.85)
 
 
 def read_and_process_img(img):
-    # img = cv2.resize(img, (image_columns, image_rows))
     img = img[50:, :, :]
     img = cv2.resize(img, (image_columns, image_rows))
     return img

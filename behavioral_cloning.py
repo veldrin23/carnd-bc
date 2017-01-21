@@ -137,23 +137,23 @@ def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=
 # read in the training data
 with open('F:/driving_log_udacity.csv') as f:
     _udacity = pd.read_csv(f, header=None, skiprows=1)
-    _udacity = import_shape_data(_udacity, down_sample_zeroes=True, add_mirror=True, use_sides=True)
+    _udacity = import_shape_data(_udacity, down_sample_zeroes=True, add_mirror=False, use_sides=False)
 
 # read in the recovery data
-with open('F:/driving_log_recover.csv') as f:
+with open('F:/driving_log_recover4.csv') as f:
     _recovery = pd.read_csv(f, header=None, skiprows=1)
     _recovery = import_shape_data(_recovery, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
-with open('F:/driving_log_recover2.csv') as f:
-    _recovery2 = pd.read_csv(f, header=None, skiprows=1)
-    _recovery2 = import_shape_data(_recovery2, down_sample_zeroes=True, add_mirror=True, use_sides=True)
-
-with open('F:/driving_log_recover3.csv') as f:
-    _recovery3 = pd.read_csv(f, header=None, skiprows=1)
-    _recovery3 = import_shape_data(_recovery3, down_sample_zeroes=True, add_mirror=True, use_sides=True)
+# with open('F:/driving_log_recover2.csv') as f:
+#     _recovery2 = pd.read_csv(f, header=None, skiprows=1)
+#     _recovery2 = import_shape_data(_recovery2, down_sample_zeroes=True, add_mirror=True, use_sides=True)
+#
+# with open('F:/driving_log_recover4.csv') as f:
+#     _recovery3 = pd.read_csv(f, header=None, skiprows=1)
+#     _recovery3 = import_shape_data(_recovery3, down_sample_zeroes=True, add_mirror=True, use_sides=True)
 
 # incase I want to append more datasets
-x_train = _udacity.append(_recovery3)
+x_train = _udacity.append(_recovery)
 
 
 plt.hist(x_train['steering_angle'], 100)

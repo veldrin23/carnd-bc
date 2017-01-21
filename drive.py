@@ -21,37 +21,13 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 import tensorflow as tf
 tf.python.control_flow_ops = tf
 
+image_rows = 66
+image_columns = 200
 
 
-# normalize image
-def normalize(img):
-    return cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-
-
-# grayscale image
-def grayscale(img):
-    return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-
-# flip image
-def flip_image(img):
-    return cv2.flip(img, flipCode=1)
-
-
-def change_brightness(img):
-    change_pct = uniform(0.4, 1.2)
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    hsv[:, :, 2] = hsv[:, :, 2] * change_pct
-    img_bright = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-    return img_bright
-
-
-def process_img(img, remove_top_bottom=True):
-
-    if remove_top_bottom:
-        img = img[50:, :, :]
+def read_and_process_img(img):
+    img = cv2.resize(img, (image_columns, image_rows))
     return img
-
 
 
 sio = socketio.Server()
@@ -78,7 +54,7 @@ def telemetry(sid, data):
     # image_array = imresize(image_array, .65, interp='bilinear', mode=None)
 
 
-    image_array = process_img(image_array)
+    image_array = read_and_process_img(image_array)
 
     transformed_image_array = image_array[None, :, :, :]
     # This model currently assumes that the features of the model are just the images. Feel free to change this.

@@ -24,4 +24,4 @@ If I could go back in time and give myself some tips:
 * np arrays are awesome, use it
 * TF works in windows now, don't bother with Docker
 * Use slack
-* Flip after adjusting angles for cameras
+* Flip **after** adjusting angles for cameras

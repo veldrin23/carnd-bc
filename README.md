@@ -14,6 +14,9 @@ Most of my time was spent on trying to get the model to use the right data. This
 ### Image processing
 For image processing, I eventually opted only to use brightness - valuable information I got from Slack. Initially I normalized the images and turned it into grayscale, but it added little value. I think that by grayscaling an image you lose too much information - the red/yellow stripes, the dirt track parts and so on. I still normalize my data, but as an additional layer in my model - not as preprocessing.
 
+## Output
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/962B7emgbGI/0.jpg)](https://www.youtube.com/watch?v=962B7emgbGI "Driving Ms Daisy")
+
 ## Difficulties
 I would say 99.9993% of the project is about feeding the right data. Not so much what your simulation looks like (it's still important), but what you do with it. Almost all of the problems I solved, was only after _looking_ at my processed images, checking what data was used for the training, if it uses a balanced set between the different cameras, does it over/ or under-sample and so on.
 
@@ -25,3 +28,4 @@ If I could go back in time and give myself some tips:
 * TF works in windows now, don't bother with Docker
 * Use slack
 * Flip **after** adjusting angles for cameras
+

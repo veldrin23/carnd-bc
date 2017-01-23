@@ -101,7 +101,6 @@ def read_and_process_img(file_name, flip):
     return img
 
 
-
 def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.25):
     """
     Function to shape the data from the log files.
@@ -233,6 +232,7 @@ else:
     model = nvidia(image_rows, image_columns, image_channels, learning_rate)
 
 
+model.summary()
 
 # create history tracker
 history = model.fit_generator(

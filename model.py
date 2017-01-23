@@ -52,13 +52,22 @@ else:
 #############
 
 
-# flip image
+
 def flip_image(img):
+    """
+    Function to flip image
+    :param img: image to flip
+    :return: flipped image
+    """
     return cv2.flip(img, flipCode=1)
 
 
-# change brightness
 def change_brightness(img):
+    """
+    Change brightness
+    :param img: image array
+    :return: brightened image
+    """
     change_pct = uniform(0.4, 1.2)
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     hsv[:, :, 2] = hsv[:, :, 2] * change_pct
@@ -66,8 +75,13 @@ def change_brightness(img):
     return img
 
 
-# read and process image
-def read_and_process_img(file_name, flip, remove_top_bottom=True):
+def read_and_process_img(file_name, flip):
+    """
+    Function to read in and process images
+    :param file_name: name of file that needs to be read and processed
+    :param flip: whether imaged should be flipped or not
+    :return: image that was cropped, its brightness changed, resized and flipped if required
+    """
     img = mpimg.imread('F:/IMG/' + basename(file_name))
 
     # crop top 50 pixels off
@@ -87,9 +101,18 @@ def read_and_process_img(file_name, flip, remove_top_bottom=True):
     return img
 
 
-# function to shape the data from the log files.
-# allows for mirroring, down sampling and to choose to use the left and right sides
+
 def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=True, side_offset=.25):
+    """
+    Function to shape the data from the log files.
+    Allows for mirroring, down sampling and to choose to use the left and right sides
+    :param logs: Log file created by the simulator
+    :param add_mirror: Whether mirror images should be added, default True
+    :param down_sample_zeroes: Whether zero values should be down-sampled, default True
+    :param use_sides: Whether the side cameras should be used, default True
+    :param side_offset: angle offset for the side cameras, default 0.25
+    :return: dataset that was augmented and shaped into desired format
+    """
     data_in = logs.ix[:, [0, 1, 2, 3]]
 
     # down sample zero driving angles by removing all the exact 0 angle entries
@@ -133,11 +156,16 @@ def import_shape_data(logs, add_mirror=True, down_sample_zeroes=True, use_sides=
 
     return data_in
 
-sampled_angles = []
+# sampled_angles = [] # This was used to see if there was an euqal distribution of sampled angles
 
 
-# generator function
 def get_image(image_list):
+    """
+    Generator function
+    Generator function, saves RAMs by generating data, instead of pushing it all into your memory in one go
+    :param image_list:
+    :return: images and angles
+    """
     ii = 0
     while True:
         images_out = np.ndarray(shape=(batch_size, image_rows, image_columns, image_channels), dtype=float)
@@ -153,13 +181,18 @@ def get_image(image_list):
 
             ii += 1
 
-            sampled_angles.append(image_list[ii][1])
+            # sampled_angles.append(image_list[ii][1])
 
         yield images_out, angle_out
 
 
-# calculates sample per epoc, this I got from Paul Heraty's work :)
 def calc_samples_per_epoch(array_size, batch_size):
+    """
+    Calculates sample per epoc,
+    :param array_size: length of the training set (or training, validation set)
+    :param batch_size: Batch size
+    :return: Sample size for each epoch
+    """
     num_batches = array_size / batch_size
     samples_per_epoch = math.ceil((num_batches / batch_size) * batch_size)
     samples_per_epoch = samples_per_epoch * batch_size

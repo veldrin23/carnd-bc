@@ -15,6 +15,7 @@ def nvidia(image_rows, image_columns, image_channels, learning_rate):
                         border_mode='same',
                         # input_shape=input_shape,
                         name='conv1', init='he_normal'))
+    model.add(Dropout(.5))
     model.add(ELU())
 
     model.add(Convolution2D(36,5,5, subsample = (2,2),
@@ -32,6 +33,7 @@ def nvidia(image_rows, image_columns, image_channels, learning_rate):
     model.add(Convolution2D(64,3,3, subsample = (1,1),
                         border_mode='valid',
                         name='conv5', init='he_normal'))
+    model.add(Dropout(.5))
     model.add(ELU())
     model.add(Flatten())
     model.add(Dense(100,name='hidden1', init='he_normal'))

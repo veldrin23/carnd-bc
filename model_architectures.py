@@ -5,7 +5,9 @@ from keras.layers import Dense, Dropout, Flatten, Lambda, ELU, MaxPooling2D, Act
 from keras.layers.convolutional import Convolution2D
 from keras.regularizers import l2
 pd.options.mode.chained_assignment = None
-
+import pydot
+import graphviz
+from keras.utils.visualize_util import plot
 
 # from keras.utils.visualize_util import model_to_dot
 

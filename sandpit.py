@@ -3,7 +3,7 @@ import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
-
+import pylab
 
 
 from random import uniform
@@ -178,4 +178,8 @@ train_rows, val_rows = int(len(x_train) * .8), int(len(x_train) * .9)
 x_test = np.array(x_train[(val_rows+1):])
 x_val = np.array(x_train[(train_rows+1):val_rows])
 x_train = np.array(x_train[1:train_rows])
+
+a = read_and_process_img(x_train[1][0], 1)
+plt.imshow(a)
+pylab.savefig('foo.png')
 

@@ -53,3 +53,5 @@ def nvidia(image_rows, image_columns, image_channels, learning_rate):
     model.compile(optimizer=Adam(learning_rate), loss='mean_squared_error')
     return model
 
+
+
